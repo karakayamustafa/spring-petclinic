@@ -1,36 +1,62 @@
-node {
-    def app
+pipeline {
+  agent {
+    kubernetes {
+      yaml '''
+        apiVersion: v1
+        kind: Pod
+        spec:
+          containers:
 
-    stage('Clone repository') {
-        /* Let's make sure we have the repository cloned to our workspace */
-
-        checkout scm
+          - name: docker
+            image: docker:latest
+            command:
+            - cat
+            tty: true
+            volumeMounts:
+             - mountPath: /var/run/docker.sock
+               name: docker-sock
+          volumes:
+          - name: docker-sock
+            hostPath:
+              path: /var/run/docker.sock    
+        '''
     }
-
-    stage('Build image') {
-        /* This builds the actual image; synonymous to
-         * docker build on the command line */
-
-        app = docker.build("getintodevops/hellonode")
-    }
-
-    stage('Test image') {
-        /* Ideally, we would run a test framework against our image.
-         * For this example, we're using a Volkswagen-type approach ;-) */
-
-        app.inside {
-            sh 'echo "Tests passed"'
+  }
+  stages {
+    stage('Clone') {
+      steps {
+        container('maven') {
+          git branch: 'main', changelog: false, poll: false, url: 'https://github.com/karakayamustafa/spring-petclinic.git'
         }
-    }
-
-    stage('Push image') {
-        /* Finally, we'll push the image with two tags:
-         * First, the incremental build number from Jenkins
-         * Second, the 'latest' tag.
-         * Pushing multiple tags is cheap, as all the layers are reused. */
-        docker.withRegistry('https://registry.hub.docker.com', 'docker-hub-credentials') {
-            app.push("${env.BUILD_NUMBER}")
-            app.push("latest")
+      }
+    }  
+    stage('Build-Docker-Image') {
+      steps {
+        container('docker') {
+          sh 'docker build -t karakayamust/java-test:1.0.0 .'
         }
+      }
+    }
+    stage('Login-Into-Docker') {
+      steps {
+        container('docker') {
+          sh 'docker login -u <docker_username> -p <docker_password>'
+      }
+    }
+    }
+     stage('Push-Images-Docker-to-DockerHub') {
+      steps {
+        container('docker') {
+          sh 'docker push karakayamust/java-test:1.0.0'
+      }
+    }
+     }
+  }
+    post {
+      always {
+        container('docker') {
+          sh 'docker logout'
+      }
+      }
     }
 }
