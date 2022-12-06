@@ -1,62 +1,23 @@
 pipeline {
   agent {
-    kubernetes {
-      yaml '''
-        apiVersion: v1
-        kind: Pod
-        spec:
-          containers:
-
-          - name: docker
-            image: docker:latest
-            command:
-            - cat
-            tty: true
-            volumeMounts:
-             - mountPath: /var/run/docker.sock
-               name: docker-sock
-          volumes:
-          - name: docker-sock
-            hostPath:
-              path: /var/run/docker.sock    
-        '''
-    }
+      node {
+          label 'docker-slave'
+      }
   }
   stages {
-    stage('Clone') {
+    
+    stage('Cloning our Git') {
       steps {
-        container('maven') {
-          git branch: 'main', changelog: false, poll: false, url: 'https://github.com/karakayamustafa/spring-petclinic.git'
+        checkout scm
+
+        def customImage = docker.build("my-image:${env.BUILD_ID}")
+
+        customImage.inside {
+           sh 'make test'
         }
       }
-    }  
-    stage('Build-Docker-Image') {
-      steps {
-        container('docker') {
-          sh 'docker build -t karakayamust/java-test:1.0.0 .'
-        }
-      }
     }
-    stage('Login-Into-Docker') {
-      steps {
-        container('docker') {
-          sh 'docker login -u <docker_username> -p <docker_password>'
-      }
-    }
-    }
-     stage('Push-Images-Docker-to-DockerHub') {
-      steps {
-        container('docker') {
-          sh 'docker push karakayamust/java-test:1.0.0'
-      }
-    }
-     }
-  }
-    post {
-      always {
-        container('docker') {
-          sh 'docker logout'
-      }
-      }
-    }
+    
 }
+
+
