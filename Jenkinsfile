@@ -47,7 +47,7 @@ pipeline {
         stage('Clean up image') {
             steps {
                 sh "docker rmi $registry/$repo:$BUILD_ID"
-                sh "docker rmi $registry/$repo:$latest"
+                sh "docker rmi $registry/$repo:latest"
             }
         }
     }
