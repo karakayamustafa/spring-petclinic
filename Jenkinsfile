@@ -2,8 +2,9 @@ pipeline {
     agent { label 'docker' }
 
     environment {
-        registry = "https://registry.hub.docker.com"
+        registryUrl = "https://registry.hub.docker.com"
         registryCredential = 'dockerhub_id'
+        registryUrl = "registry.hub.docker.com"
         repo = "karakayamust/spring-petclinic"
     }
 
@@ -18,9 +19,16 @@ pipeline {
             steps {
                 script{
                     image = docker.build(repo)
+                }
+            }
+        }
+
+        stage('Test image') {
+            steps {
+                script{
                     image.inside {
                         sh 'echo "Tests passed"'
-                    }   
+                    }                
                 }
             }
         }
@@ -28,7 +36,7 @@ pipeline {
         stage('Push image') {
             steps {
                 script {
-                    docker.withRegistry(registry, registryCredential) {
+                    docker.withRegistry(registryUrl, registryCredential) {
                         image.push("${env.BUILD_ID}")
                         image.push("latest")
                     }
