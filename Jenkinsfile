@@ -7,29 +7,40 @@ pipeline {
 
     stages {
         stage('Clone repository') {
-            checkout scm
-        }
-
-        stage('Build image') {
-            def app = docker.build(repo)
-        }
-
-        stage('Test image') {
-            app.inside {
-                sh 'echo "Tests passed"'
+            steps {
+                checkout scm
             }
         }
 
+        stage('Build image') {
+            steps {
+                def app = docker.build(repo)
+            }
+        }
+
+        stage('Test image') {
+            steps {
+                app.inside {
+                    sh 'echo "Tests passed"'
+                }
+            }
+
+        }
+
         stage('Push image') {
-            docker.withRegistry(registry, registryCredential) {
-                app.push("${env.BUILD_ID}")
-                app.push("latest")
+            steps {
+                docker.withRegistry(registry, registryCredential) {
+                    app.push("${env.BUILD_ID}")
+                    app.push("latest")
+                }
             }
         }
 
         stage('Clean up image') {
-            sh "docker rmi $registry/$repo:$BUILD_ID"
-            sh "docker rmi $registry/$repo:$latest"
+            steps {
+                sh "docker rmi $registry/$repo:$BUILD_ID"
+                sh "docker rmi $registry/$repo:$latest"
+            }
         }
     }
 
