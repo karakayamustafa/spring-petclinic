@@ -18,16 +18,9 @@ pipeline {
             steps {
                 script{
                     def image = docker.build(repo)
-                }
-            }
-        }
-
-        stage('Test image') {
-            steps {
-                script{
                     image.inside {
                         sh 'echo "Tests passed"'
-                    }                
+                    }   
                 }
             }
         }
