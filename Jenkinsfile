@@ -14,24 +14,29 @@ pipeline {
 
         stage('Build image') {
             steps {
-                def app = docker.build(repo)
+                script{
+                    def image = docker.build(repo)
+                }
             }
         }
 
         stage('Test image') {
             steps {
-                app.inside {
-                    sh 'echo "Tests passed"'
+                script{
+                    image.inside {
+                        sh 'echo "Tests passed"'
+                    }                
                 }
             }
-
         }
 
         stage('Push image') {
             steps {
-                docker.withRegistry(registry, registryCredential) {
-                    app.push("${env.BUILD_ID}")
-                    app.push("latest")
+                script {
+                    docker.withRegistry(registry, registryCredential) {
+                        image.push("${env.BUILD_ID}")
+                        image.push("latest")
+                    }
                 }
             }
         }
