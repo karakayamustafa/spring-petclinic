@@ -1,12 +1,17 @@
 node  {
-    def app
+    environment {
+        registry = "https://registry.hub.docker.com"
+        registryCredential = 'dockerhub_id'
+        repo = "karakayamust/spring-petclinic"
+    }
+
 
     stage('Clone repository') {
         checkout scm
     }
 
     stage('Build image') {
-        app = docker.build("karakayamust/java-test")
+        def app = docker.build(repo)
     }
 
     stage('Test image') {
@@ -16,10 +21,15 @@ node  {
     }
 
     stage('Push image') {
-        docker.withRegistry('https://registry.hub.docker.com', 'dockerhub_id') {
-            app.push("${env.BUILD_NUMBER}")
+        docker.withRegistry(registry, registryCredential) {
+            app.push("${env.BUILD_ID}")
             app.push("latest")
         }
+    }
+
+    stage('Clean up image') {
+        sh "docker rmi $registry/$repo:$BUILD_ID"
+        sh "docker rmi $registry/$repo:$latest"
     }
 }
 
