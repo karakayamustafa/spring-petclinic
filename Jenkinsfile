@@ -4,7 +4,7 @@ pipeline {
     environment {
         registryUrl = "https://registry.hub.docker.com"
         registryCredential = 'dockerhub_id'
-        registryUrl = "registry.hub.docker.com"
+        registry = "registry.hub.docker.com"
         repo = "karakayamust/spring-petclinic"
     }
 
