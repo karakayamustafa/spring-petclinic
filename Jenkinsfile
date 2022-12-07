@@ -17,7 +17,7 @@ pipeline {
         stage('Build image') {
             steps {
                 script{
-                    def image = docker.build(repo)
+                    image = docker.build(repo)
                     image.inside {
                         sh 'echo "Tests passed"'
                     }   
